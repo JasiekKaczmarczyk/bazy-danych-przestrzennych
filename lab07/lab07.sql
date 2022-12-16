@@ -1,4 +1,4 @@
--- 1 i 2
+-- 1 i 2 ze względu na długi czas przetwarzania wczytuję tylko kilka plików
 -- raster2pgsql.exe -s 3763 -N -32767 -t 100x100 -I -C -M -d *.tif uk_250k | psql -d cw7 -h localhost -U postgres -p 5432
 
 -- 3
@@ -19,15 +19,15 @@ from data_lakes as a, national_parks as b
 where b.id = 1 and ST_Intersects(b.geom,a.rast);
 
 -- 7
-create table tmp_out_clipped as
+create table out_clipped as
 select lo_from_bytea(0, ST_AsGDALRaster(ST_Union(rast), 'GTiff', ARRAY['COMPRESS=DEFLATE', 'PREDICTOR=2', 'PZLEVEL=9'])) as loid
 from data_lakes_clip;
 
-select lo_export(loid, 'C:\Users\jkaczmarczyk\Documents\BDP\lab07\lake_district_clip.tiff')
-from tmp_out_clipped;
+select lo_export(loid, 'C:\Users\jkaczmarczyk\Documents\BDP\lab07\lake_district_clip.tif')
+from out_clipped;
 
 select lo_unlink(loid)
-from tmp_out_clipped;
+from out_clipped;
 
 -- 8 i 9 wczytanie danych z sentinela
 
@@ -46,7 +46,7 @@ language 'plpgsql' immutable cost 1000;
 
 create table ndvi as
 with r as (
-    select a.rid,ST_Clip(a.rast, b.geom,true) as rast
+    select a.rid, ST_Clip(a.rast, b.geom,true) as rast
     from sentinel a, national_parks b
     where b.id = 1 and ST_Intersects(b.geom,a.rast)
 )
